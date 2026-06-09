@@ -1,0 +1,68 @@
+import type { Applicant } from '../types'
+
+export const DEFAULT_APPLICANTS: Applicant[] = [
+  {
+    id: 'app_001',
+    name: 'Priya Nair',
+    email: 'priya.nair@mit.edu',
+    appliedTrack: 'Mechanistic Interpretability',
+    statement: 'I want to contribute to understanding how transformer circuits implement abstract reasoning, building on my prior work on superposition and feature geometry.',
+    submittedAt: '2026-06-01T10:23:00Z',
+    links: {
+      github: 'https://github.com/anthropics/interpretability-research',
+      linkedin: 'https://www.linkedin.com/in/priya-nair-ai',
+      papers: ['https://arxiv.org/abs/2309.01809'],
+      blogPosts: ['https://www.lesswrong.com/posts/aPeJE8bSo6rAFoLqg/safety-cases-and-what-makes-them-good'],
+    },
+    review: { status: 'pending' },
+    decision: null,
+  },
+  {
+    id: 'app_002',
+    name: 'Marcus Webb',
+    email: 'marcus.webb@stanford.edu',
+    appliedTrack: 'Scalable Oversight',
+    statement: 'My background is in RLHF and debate-based training. I think scalable oversight is the crux of alignment and want to prototype new evaluation protocols.',
+    submittedAt: '2026-06-02T14:05:00Z',
+    links: {
+      github: 'https://github.com/EleutherAI/lm-evaluation-harness',
+      linkedin: 'https://www.linkedin.com/in/marcus-webb-ml',
+      papers: ['https://arxiv.org/abs/2212.09251'],
+      blogPosts: ['https://www.alignmentforum.org/posts/Djs38EWYZG8o7JMWY/paul-s-research-agenda-faq'],
+    },
+    review: { status: 'pending' },
+    decision: null,
+  },
+  {
+    id: 'app_003',
+    name: 'Selin Özdemir',
+    email: 'selin@ethz.ch',
+    appliedTrack: 'Robustness & Red-teaming',
+    statement: "I've been doing adversarial ML research for 2 years. I believe red-teaming and robustness evaluation are underdeveloped in the safety ecosystem.",
+    submittedAt: '2026-06-03T09:15:00Z',
+    links: {
+      github: 'https://github.com/google-deepmind/deepmind-research',
+      linkedin: 'https://www.linkedin.com/in/selin-ozdemir',
+      papers: ['https://arxiv.org/abs/2202.03286'],
+      blogPosts: [],
+    },
+    review: { status: 'pending' },
+    decision: null,
+  },
+  {
+    id: 'app_004',
+    name: 'Jordan Reyes',
+    email: 'jreyes@gmail.com',
+    appliedTrack: 'Mechanistic Interpretability',
+    statement: 'I am passionate about AI and want to learn more about safety. I have done some machine learning projects and think this fellowship would be great for my career.',
+    submittedAt: '2026-06-04T18:42:00Z',
+    links: {
+      github: 'https://github.com/torvalds/linux',
+      linkedin: 'https://www.linkedin.com/in/jordan-reyes-tech',
+      papers: [],
+      blogPosts: ['https://medium.com/@jreyes/my-journey-learning-python-2024'],
+    },
+    review: { status: 'pending' },
+    decision: null,
+  },
+]
