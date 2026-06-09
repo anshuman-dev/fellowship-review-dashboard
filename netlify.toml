@@ -5,9 +5,5 @@
 [build.environment]
   NODE_VERSION = "20"
 
-# Extend timeout for AI review functions (URL fetching + Claude calls take ~30s)
-[functions]
-  timeout = 60
-
 [[plugins]]
   package = "@netlify/plugin-nextjs"
