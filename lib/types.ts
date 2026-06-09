@@ -6,8 +6,9 @@ export interface ApplicantLinks {
 }
 
 export interface DimensionScore {
-  score: number; // 0-10, set by human reviewer
+  score: number;   // 0-10
   notes?: string;
+  findings?: string[];
 }
 
 export interface ReviewScores {

@@ -1,48 +1,56 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getApplicant, updateApplicant } from "@/lib/storage";
-import type { ReviewScores, Recommendation } from "@/lib/types";
+import { fetchGitHub, fetchLink } from "@/lib/fetchers";
+import { scoreGitHub, scorePapers, scoreLinkedIn, scoreConsistency, calcOverall, calcRecommendation } from "@/lib/scorer";
 
-function calcOverall(scores: Omit<ReviewScores, "overall">): number {
-  return Math.round(
-    scores.github.score * 3.5 +
-    scores.papers.score * 3.5 +
-    scores.linkedin.score * 1.5 +
-    scores.consistency.score * 1.5,
-  );
-}
-
-function calcRecommendation(overall: number): Recommendation {
-  if (overall >= 80) return "strongly_recommend";
-  if (overall >= 65) return "recommend";
-  if (overall >= 45) return "borderline";
-  return "do_not_recommend";
-}
-
-export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const applicant = getApplicant(id);
   if (!applicant) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  const body = await req.json();
-  const { scores, reviewerName } = body as {
-    scores: Omit<ReviewScores, "overall">;
-    reviewerName?: string;
-  };
+  try {
+    updateApplicant(id, { review: { status: "in_progress" } });
 
-  const overall = calcOverall(scores);
-  const recommendation = calcRecommendation(overall);
+    const { links, statement, appliedTrack } = applicant;
 
-  const updated = updateApplicant(id, {
-    review: {
-      status: "completed",
-      completedAt: new Date().toISOString(),
-      scores: { ...scores, overall },
-      recommendation,
-      reviewerName,
-    },
-  });
+    // Fetch all links in parallel
+    const [githubFetched, linkedinFetched, ...restFetched] = await Promise.all([
+      links.github ? fetchGitHub(links.github) : Promise.resolve(null),
+      links.linkedin ? fetchLink(links.linkedin) : Promise.resolve(null),
+      ...(links.papers || []).map((u) => fetchLink(u)),
+      ...(links.blogPosts || []).map((u) => fetchLink(u)),
+    ]);
 
-  return NextResponse.json(updated);
+    // Score each dimension with deterministic rules
+    const githubScore = scoreGitHub(githubFetched);
+    const papersScore = scorePapers(restFetched);
+    const linkedinScore = scoreLinkedIn(linkedinFetched);
+    const consistencyScore = scoreConsistency(statement, appliedTrack, githubScore, papersScore);
+
+    const scores = {
+      github: githubScore,
+      papers: papersScore,
+      linkedin: linkedinScore,
+      consistency: consistencyScore,
+    };
+
+    const overall = calcOverall(scores);
+    const recommendation = calcRecommendation(overall);
+
+    const updated = updateApplicant(id, {
+      review: {
+        status: "completed",
+        completedAt: new Date().toISOString(),
+        scores: { ...scores, overall },
+        recommendation,
+      },
+    });
+
+    return NextResponse.json(updated);
+  } catch (err) {
+    updateApplicant(id, { review: { status: "pending" } });
+    return NextResponse.json({ error: String(err) }, { status: 500 });
+  }
 }
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
