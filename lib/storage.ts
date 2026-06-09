@@ -3,36 +3,51 @@ import path from "path";
 import type { Applicant } from "./types";
 
 const SOURCE_PATH = path.join(process.cwd(), "data", "applicants.json");
-const TMP_PATH = "/tmp/applicants.json";
+const BLOB_KEY = "applicants";
 
-// On serverless, writes go to /tmp which persists within a warm container.
-// Each function call resolves the live path so cold-start re-seeding works correctly.
-function resolvedPath(): string {
-  if (process.env.NODE_ENV !== "production") return SOURCE_PATH;
-  if (!fs.existsSync(TMP_PATH)) {
-    fs.copyFileSync(SOURCE_PATH, TMP_PATH);
+function isNetlify() {
+  return !!process.env.NETLIFY;
+}
+
+async function getBlobStore() {
+  const { getStore } = await import("@netlify/blobs");
+  return getStore("fellowship");
+}
+
+export async function readApplicants(): Promise<Applicant[]> {
+  if (isNetlify()) {
+    const store = await getBlobStore();
+    const data = await store.get(BLOB_KEY, { type: "text" });
+    if (!data) {
+      // First deploy — seed from the bundled source file
+      const initial: Applicant[] = JSON.parse(fs.readFileSync(SOURCE_PATH, "utf-8"));
+      await store.set(BLOB_KEY, JSON.stringify(initial));
+      return initial;
+    }
+    return JSON.parse(data);
   }
-  return TMP_PATH;
+  return JSON.parse(fs.readFileSync(SOURCE_PATH, "utf-8"));
 }
 
-export function readApplicants(): Applicant[] {
-  const raw = fs.readFileSync(resolvedPath(), "utf-8");
-  return JSON.parse(raw);
+export async function writeApplicants(applicants: Applicant[]): Promise<void> {
+  if (isNetlify()) {
+    const store = await getBlobStore();
+    await store.set(BLOB_KEY, JSON.stringify(applicants));
+    return;
+  }
+  fs.writeFileSync(SOURCE_PATH, JSON.stringify(applicants, null, 2));
 }
 
-export function writeApplicants(applicants: Applicant[]): void {
-  fs.writeFileSync(resolvedPath(), JSON.stringify(applicants, null, 2));
+export async function getApplicant(id: string): Promise<Applicant | undefined> {
+  const all = await readApplicants();
+  return all.find((a) => a.id === id);
 }
 
-export function getApplicant(id: string): Applicant | undefined {
-  return readApplicants().find((a) => a.id === id);
-}
-
-export function updateApplicant(id: string, patch: Partial<Applicant>): Applicant | null {
-  const applicants = readApplicants();
+export async function updateApplicant(id: string, patch: Partial<Applicant>): Promise<Applicant | null> {
+  const applicants = await readApplicants();
   const idx = applicants.findIndex((a) => a.id === id);
   if (idx === -1) return null;
   applicants[idx] = { ...applicants[idx], ...patch };
-  writeApplicants(applicants);
+  await writeApplicants(applicants);
   return applicants[idx];
 }

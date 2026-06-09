@@ -7,7 +7,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const body = await req.json();
   const { decision, notes } = body as { decision: HumanDecision; notes?: string };
 
-  const updated = updateApplicant(id, { humanDecision: decision, humanNotes: notes });
+  const updated = await updateApplicant(id, { humanDecision: decision, humanNotes: notes });
   if (!updated) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   return NextResponse.json({ success: true, applicant: updated });

@@ -69,8 +69,8 @@ function getStats(applicants: Applicant[]) {
   return { total, reviewed, accepted, awaitingDecision };
 }
 
-export default function Dashboard() {
-  const applicants = readApplicants();
+export default async function Dashboard() {
+  const applicants = await readApplicants();
   const s = getStats(applicants);
 
   return (
