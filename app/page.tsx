@@ -2,6 +2,8 @@ import Link from "next/link";
 import { readApplicants } from "@/lib/storage";
 import type { Applicant, Recommendation, HumanDecision } from "@/lib/types";
 
+export const dynamic = "force-dynamic";
+
 function recommendationBadge(rec?: Recommendation) {
   if (!rec) return null;
   const config = {
