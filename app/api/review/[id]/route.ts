@@ -1,27 +1,48 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getApplicant, updateApplicant } from "@/lib/storage";
-import { runReview } from "@/lib/evaluator";
+import type { ReviewScores, Recommendation } from "@/lib/types";
 
-// Runs the full review synchronously and returns the result.
-// Serverless-safe: no fire-and-forget — the function stays alive until review completes.
-export async function POST(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+function calcOverall(scores: Omit<ReviewScores, "overall">): number {
+  return Math.round(
+    scores.github.score * 3.5 +
+    scores.papers.score * 3.5 +
+    scores.linkedin.score * 1.5 +
+    scores.consistency.score * 1.5,
+  );
+}
+
+function calcRecommendation(overall: number): Recommendation {
+  if (overall >= 80) return "strongly_recommend";
+  if (overall >= 65) return "recommend";
+  if (overall >= 45) return "borderline";
+  return "do_not_recommend";
+}
+
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const applicant = getApplicant(id);
   if (!applicant) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  if (applicant.review.status === "reviewing") {
-    return NextResponse.json({ error: "Review already in progress" }, { status: 409 });
-  }
+  const body = await req.json();
+  const { scores, reviewerName } = body as {
+    scores: Omit<ReviewScores, "overall">;
+    reviewerName?: string;
+  };
 
-  try {
-    updateApplicant(id, { review: { status: "reviewing", startedAt: new Date().toISOString() } });
-    const result = await runReview(applicant);
-    const updated = updateApplicant(id, { review: result });
-    return NextResponse.json(updated);
-  } catch (err) {
-    updateApplicant(id, { review: { status: "error", errorMessage: String(err) } });
-    return NextResponse.json({ error: String(err) }, { status: 500 });
-  }
+  const overall = calcOverall(scores);
+  const recommendation = calcRecommendation(overall);
+
+  const updated = updateApplicant(id, {
+    review: {
+      status: "completed",
+      completedAt: new Date().toISOString(),
+      scores: { ...scores, overall },
+      recommendation,
+      reviewerName,
+    },
+  });
+
+  return NextResponse.json(updated);
 }
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {

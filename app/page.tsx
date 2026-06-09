@@ -32,12 +32,12 @@ function humanDecisionBadge(dec: HumanDecision) {
 }
 
 function statusDot(status: Applicant["review"]["status"]) {
-  const config = {
-    pending: { cls: "bg-gray-300", label: "Pending" },
-    reviewing: { cls: "bg-amber-400 animate-pulse", label: "Reviewing…" },
-    completed: { cls: "bg-emerald-400", label: "Done" },
-    error: { cls: "bg-red-400", label: "Error" },
-  }[status];
+  const map: Record<string, { cls: string; label: string }> = {
+    pending:     { cls: "bg-gray-300",                   label: "Pending" },
+    in_progress: { cls: "bg-amber-400 animate-pulse",    label: "In Progress" },
+    completed:   { cls: "bg-emerald-400",                label: "Done" },
+  };
+  const config = map[status] ?? { cls: "bg-gray-300", label: status };
   return (
     <span className="flex items-center gap-1.5 text-xs text-gray-500">
       <span className={`w-2 h-2 rounded-full ${config.cls}`} />
@@ -82,7 +82,7 @@ export default function Dashboard() {
               <span className="text-gray-300">·</span>
               <span className="text-sm text-gray-500">Fellowship Review Dashboard</span>
             </div>
-            <p className="text-xs text-gray-400 mt-0.5">AI-assisted · Human decision is final</p>
+            <p className="text-xs text-gray-400 mt-0.5">Weighted rubric · Human decision is final</p>
           </div>
           <div className="flex gap-6 text-center">
             <div>
@@ -124,9 +124,9 @@ export default function Dashboard() {
               <tr className="border-b border-gray-100 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 <th className="px-5 py-3">Applicant</th>
                 <th className="px-5 py-3">Track</th>
-                <th className="px-5 py-3">AI Status</th>
+                <th className="px-5 py-3">Status</th>
                 <th className="px-5 py-3 w-48">Scores</th>
-                <th className="px-5 py-3">AI Recommendation</th>
+                <th className="px-5 py-3">Recommendation</th>
                 <th className="px-5 py-3">Decision</th>
                 <th className="px-5 py-3" />
               </tr>
@@ -152,9 +152,10 @@ export default function Dashboard() {
                   <td className="px-5 py-4">
                     {a.review.status === "completed" && a.review.scores ? (
                       <div className="space-y-1.5 w-44">
-                        <ScoreBar score={a.review.scores.github.score} label="GitHub" />
-                        <ScoreBar score={a.review.scores.papers.score} label="Papers" />
-                        <ScoreBar score={a.review.scores.linkedin.score} label="LinkedIn" />
+                        {/* dimension scores are 0-10; scale to % for bar */}
+                        <ScoreBar score={a.review.scores.github.score * 10} label="GitHub" />
+                        <ScoreBar score={a.review.scores.papers.score * 10} label="Papers" />
+                        <ScoreBar score={a.review.scores.linkedin.score * 10} label="LinkedIn" />
                         <ScoreBar score={a.review.scores.overall} label="Overall" />
                       </div>
                     ) : (

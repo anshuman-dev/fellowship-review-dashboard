@@ -6,19 +6,16 @@ export interface ApplicantLinks {
 }
 
 export interface DimensionScore {
-  score: number; // 0-100
-  reasoning: string;
-  findings: string[];
-  fetched: boolean;
-  error?: string;
+  score: number; // 0-10, set by human reviewer
+  notes?: string;
 }
 
 export interface ReviewScores {
-  github: DimensionScore;
-  papers: DimensionScore;
-  linkedin: DimensionScore;
-  consistency: DimensionScore;
-  overall: number; // weighted 0-100
+  github: DimensionScore;      // weight 35%
+  papers: DimensionScore;      // weight 35%
+  linkedin: DimensionScore;    // weight 15%
+  consistency: DimensionScore; // weight 15%
+  overall: number;             // 0-100 weighted
 }
 
 export type Recommendation =
@@ -30,15 +27,11 @@ export type Recommendation =
 export type HumanDecision = "accepted" | "waitlisted" | "rejected" | null;
 
 export interface ReviewResult {
-  status: "pending" | "reviewing" | "completed" | "error";
-  startedAt?: string;
+  status: "pending" | "in_progress" | "completed";
   completedAt?: string;
   scores?: ReviewScores;
   recommendation?: Recommendation;
-  summary?: string;
-  keyStrengths?: string[];
-  concerns?: string[];
-  errorMessage?: string;
+  reviewerName?: string;
 }
 
 export interface Applicant {
@@ -46,7 +39,7 @@ export interface Applicant {
   name: string;
   email: string;
   appliedTrack: string;
-  statement: string; // short motivation statement
+  statement: string;
   submittedAt: string;
   links: ApplicantLinks;
   review: ReviewResult;
